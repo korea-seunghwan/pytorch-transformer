@@ -166,7 +166,7 @@ class VisionTransformer(nn.Module):
             x = block(x)
         
         x = self.norm(x)
-        print('final x shape: ', x.shape)
+        # print('final x shape: ', x.shape)
         cls_token_final = x[:, 0]
         x = self.head(cls_token_final)
 
