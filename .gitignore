@@ -1,5 +1,7 @@
 __pycache__
 
+vision_transformer_pre_train/data
+
 vision_transformer/__pycache__
 vision_transformer/data
 
