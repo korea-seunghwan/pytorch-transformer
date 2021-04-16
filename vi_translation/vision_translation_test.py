@@ -67,6 +67,7 @@ for epoch in range(num_epochs):
 
         # Forward pass real batch through D
         outputs = modelE(inputs)
+        print('outputs shape: ', outputs.shape)
 
         # Calculate gradients for D in backward pass
         # print('output size: ', output.shape)
