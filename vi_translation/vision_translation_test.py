@@ -12,7 +12,7 @@ import torchvision.utils as vutils
 import numpy as np
 import matplotlib.pyplot as plt
 
-from vi_translation.vision_translation import Generator, VitTranslationEncoder
+from vi_translation.vision_translation import Generator2, VitTranslation, VitTranslationEncoder
 import torchvision.models as models
 # from PIL import Image
 # import numpy as np
@@ -34,9 +34,10 @@ classes = ['plane', 'car', 'bird', 'cat','deer','dog','frog','horse','ship','tru
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 modelE = VitTranslationEncoder(32, 4, 3, 512).to(device)
-modelG = Generator().to(device)
+modelG = Generator2().to(device)
 
 criterion = nn.BCELoss()
+criterion2 = nn.CosineSimilarity()
 
 real_label = 1.
 fake_label = 0.
@@ -60,34 +61,32 @@ for epoch in range(num_epochs):
 
         # Format batch
         N = inputs.size(0)
-        label = torch.full((N,), real_label, dtype=torch.float, device=device)
+        D = 512
+
+        label = torch.full((N,D), real_label, dtype=torch.float, device=device)
 
         # Forward pass real batch through D
-        outputs, outputs2 = modelE(inputs)
-        outputs2 = outputs2.view(-1)
+        outputs = modelE(inputs)
 
         # Calculate gradients for D in backward pass
         # print('output size: ', output.shape)
         # print('label size: ', label.shape)
-        errD_real = criterion(outputs2, label)
+        errD_real = criterion(outputs, label)
         errD_real.backward()
-        D_x = outputs2.mean().item()
+        D_x = torch.mean(torch.mean(outputs, dim=1), dim=0).item()
 
         # Generate batch of latent vectors
-        inputG = outputs[:,1:,:]
-        inputG = torch.transpose(inputG, 1, 2)
-        inputG = inputG.reshape(N, 512, 8, 8)
+        inputG = outputs.unsqueeze(-1).unsqueeze(-1)
         fake = modelG(inputG)
         label.fill_(fake_label)
 
         # classify all fake batch with D
-        outputs, outputs2 = modelE(fake.detach_())
-        outputs2 = outputs2.view(-1)
+        outputs = modelE(fake.detach_())
 
-        errD_fake = criterion(outputs2, label)
+        errD_fake = criterion(outputs, label)
         errD_fake.backward()
 
-        D_G_z1 = outputs2.mean().item()
+        D_G_z1 = torch.mean(torch.mean(outputs, dim=1), dim=0).item()
 
         errD = errD_real + errD_fake
 
@@ -98,16 +97,14 @@ for epoch in range(num_epochs):
         # update G
         modelG.zero_grad()
         label.fill_(real_label)
-        outputs, outputs2 = modelE(fake)
-        outputs2 = outputs2.view(-1)
-
+        outputs = modelE(fake)
         # print('output2 shape: ', output2.shape) 
         # print('label shape: ', label.shape)
 
-        errG = criterion(outputs2, label)
+        errG = criterion(outputs, label)
         errG.backward()
 
-        D_G_z2 = outputs2.mean().item()
+        D_G_z2 = torch.mean(torch.mean(outputs, dim=1), dim=0).item()
 
         # update G
         optimizerG.step()

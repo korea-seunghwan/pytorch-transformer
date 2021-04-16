@@ -81,15 +81,12 @@ class VitTranslationEncoder(nn.Module):
 
         self.encoderLayer = nn.TransformerEncoderLayer(512, 8, ((img_size // patch_size)**2 * 3),0.1, 'gelu')
         self.encoder = nn.TransformerEncoder(self.encoderLayer, 12)
-        self.head = nn.Linear(512, 1)
 
     def forward(self, x):
         out = self.vitEmbedding(x)
         out = self.encoder(out)
-
-        out2 = self.head(out[:, 0])
-        out2 = torch.sigmoid(out2)
-        return out, out2
+        out = torch.sigmoid(out)
+        return out[0, :]
 
 
 
@@ -104,6 +101,30 @@ class Generator(nn.Module):
             nn.Sigmoid()
         )
 
+    def forward(self, x):
+        return self.main(x)
+
+class Generator2(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.main = nn.Sequential(
+            nn.ConvTranspose2d(512, 256, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
+            nn.ConvTranspose2d(256, 128, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 64, 4, 2, 1, bias=True),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 32, 4, 2, 1, bias=True),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.ConvTranspose2d(32, 3, 4, 2, 1, bias=True),
+            nn.BatchNorm2d(3),
+            nn.Tanh()
+        )
+    
     def forward(self, x):
         return self.main(x)
 
