@@ -81,12 +81,14 @@ class VitTranslationEncoder(nn.Module):
 
         self.encoderLayer = nn.TransformerEncoderLayer(512, 8, ((img_size // patch_size)**2 * 3),0.1, 'gelu')
         self.encoder = nn.TransformerEncoder(self.encoderLayer, 12)
+        self.head = nn.Linear(512, 1)
 
     def forward(self, x):
         out = self.vitEmbedding(x)
         out = self.encoder(out)
         out = torch.sigmoid(out)
-        return out[0, :]
+        # out = self.head(out[:, 0])
+        return out[:, 0]
 
 
 

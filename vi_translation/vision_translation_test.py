@@ -63,7 +63,7 @@ for epoch in range(num_epochs):
         N = inputs.size(0)
         D = 512
 
-        label = torch.full((N,D), real_label, dtype=torch.float, device=device)
+        label = torch.full((N,), real_label, dtype=torch.float, device=device)
 
         # Forward pass real batch through D
         outputs = modelE(inputs)
