@@ -6,3 +6,5 @@ vision_transformer/__pycache__
 vision_transformer/data
 
 attention-is-all-you-need/data
+
+vi_translation/data

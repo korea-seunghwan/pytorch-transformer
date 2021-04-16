@@ -1,3 +1,7 @@
+import sys
+import os
+# print(os.path.abspath(os.path.dirname(__file__)))
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 import torch
 import torch.nn as nn
 from torch.nn import modules
@@ -5,7 +9,7 @@ from torch.nn.modules import dropout
 import torch.optim as optim
 import spacy
 from torchtext.data.iterator import batch
-from .utils import translate_sentence, bleu, save_checkpoint, load_checkpoint
+from transformer_for_machine_translation.utils import translate_sentence, bleu, save_checkpoint, load_checkpoint
 from torch.utils.tensorboard import SummaryWriter
 from torchtext.datasets import Multi30k
 from torchtext.data import Field, BucketIterator
@@ -15,8 +19,8 @@ To install spacy languages do:
 python -m spacy download en
 python -m spacy download de
 """
-spacy_ger = spacy.load("de")
-spacy_eng = spacy.load("en")
+spacy_ger = spacy.load("de_core_news_sm")
+spacy_eng = spacy.load("en_core_web_sm")
 
 def tokenize_ger(text):
     return [tok.text for tok in spacy_ger.tokenizer(text)]
@@ -174,6 +178,9 @@ for epoch in range(num_epochs):
     for batch_idx, batch in enumerate(train_iterator):
         inp_data = batch.src.to(device)
         target = batch.trg.to(device)
+
+        print('inp data size: ', inp_data.shape)
+        print('target data size: ', target.shape)
 
         # forward prop
         output = model(inp_data, target[:-1])
