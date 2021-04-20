@@ -90,8 +90,6 @@ class VitTranslationEncoder(nn.Module):
         # out = self.head(out[:, 0])
         return out[:, 0]
 
-
-
 class Generator(nn.Module):
     def __init__(self):
         super().__init__()
