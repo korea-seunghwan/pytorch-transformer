@@ -8,3 +8,7 @@ vision_transformer/data
 attention-is-all-you-need/data
 
 vi_translation/data
+
+.data/
+runs/
+my_checkpoint.pth.tar

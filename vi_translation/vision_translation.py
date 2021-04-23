@@ -56,23 +56,6 @@ class VitEmbedding(nn.Module):
 
         return x
 
-class VitTranslation(nn.Module):
-    def __init__(self, img_size, patch_size, in_chans, embed_dim):
-        super().__init__()
-
-        self.vit_embedding = VitEmbedding(img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
-
-        self.transformer = nn.Transformer(embed_dim, 8, 6, 6, ((img_size // patch_size)**2 * 3), 0.1, "gelu")
-
-    def forward(self, x1, x2):
-        src_inp = self.vit_embedding(x1)
-        trg_inp = self.vit_embedding(x2)
-
-        output = self.transformer(src_inp, trg_inp)
-        output = F.sigmoid(output)
-
-        return output 
-
 class VitTranslationEncoder(nn.Module):
     def __init__(self, img_size, patch_size, in_chans, embed_dim):
         super().__init__()
@@ -81,69 +64,49 @@ class VitTranslationEncoder(nn.Module):
 
         self.encoderLayer = nn.TransformerEncoderLayer(512, 8, ((img_size // patch_size)**2 * 3),0.1, 'gelu')
         self.encoder = nn.TransformerEncoder(self.encoderLayer, 12)
-        self.head = nn.Linear(512, 1)
 
     def forward(self, x):
         out = self.vitEmbedding(x)
         out = self.encoder(out)
-        out = torch.sigmoid(out)
-        # out = self.head(out[:, 0])
-        return out[:, 0]
+        return out
+
+class VitTranslationDecoder(nn.Module):
+    def __init__(self, img_size, patch_size, in_chans, embed_dim):
+        super().__init__()
+
+        self.vitEmbedding = VitEmbedding(img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim)
+
+        self.decoder_layer = nn.TransformerDecoderLayer(512, 8)
+        self.decoder = nn.TransformerDecoder(self.decoder_layer, num_layers=8)
+
+    def forward(self, memory, target):
+        out = self.vitEmbedding(target)
+        out = self.decoder(out, memory)
+        return out
+
+class VitTranslation(nn.Module):
+    def __init__(self, img_size, patch_size, in_chans, embed_dim):
+        super().__init__()
+
+        self.encoder = VitTranslationEncoder(img_size, patch_size, in_chans, embed_dim)
+        self.decoder = VitTranslationDecoder(img_size, patch_size, in_chans, embed_dim)
+
+    def forward(self, x1, x2):
+        src = self.encoder(x1)
+        output = self.decoder(src, x2)
+        # output = torch.sigmoid(output)
+
+        return output 
 
 class Generator(nn.Module):
     def __init__(self):
         super().__init__()
+
         self.main = nn.Sequential(
-            nn.ConvTranspose2d(512, 64, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(64),
-            nn.ReLU(True),
-            nn.ConvTranspose2d( 64, 3, 4, 2, 1, bias=False),
-            nn.Sigmoid()
+            nn.ConvTranspose2d(512, 3, 8, 4, 2, bias=False)
         )
 
-    def forward(self, x):
-        return self.main(x)
-
-class Generator2(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.main = nn.Sequential(
-            nn.ConvTranspose2d(512, 256, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.ConvTranspose2d(256, 128, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, 4, 2, 1, bias=True),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, 4, 2, 1, bias=True),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.ConvTranspose2d(32, 3, 4, 2, 1, bias=True),
-            nn.BatchNorm2d(3),
-            nn.Tanh()
-        )
-    
-    def forward(self, x):
-        return self.main(x)
-
-
-class Discriminator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.linear = nn.Linear(512, 10)
 
     def forward(self, x):
-        return self.linear(x)
-
-class DiscriminatorCNN(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.vgg = models.vgg16(pretrained=True)
-        self.mlp = nn.Linear(1000, 10)
-
-    def forward(self, x):
-        out = self.vgg(x)
-        out = self.mlp(out)
+        out = self.main(x)
         return out

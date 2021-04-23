@@ -68,6 +68,8 @@ class Transformer(nn.Module):
     def forward(self, src, trg):
         src_seq_length, N = src.shape
         trg_seq_length, N = trg.shape
+        
+        # print('trg_seq_length shape: ', trg_seq_length.shape)
 
         src_positions = (
             torch.arange(0, src_seq_length).unsqueeze(1).expand(trg_seq_length, N).to(self.device)
@@ -173,6 +175,7 @@ for epoch in range(num_epochs):
     )
 
     print(f"Translated example sentence \n {translated_sentence}")
+
     model.train()
 
     for batch_idx, batch in enumerate(train_iterator):
