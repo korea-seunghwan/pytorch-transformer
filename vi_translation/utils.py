@@ -9,7 +9,7 @@ from PIL import Image
 
 transform = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
 
 def image_to_data(path):
@@ -17,7 +17,8 @@ def image_to_data(path):
     dog_data = torch.tensor([])
     for folder_list in sorted(os.listdir(path)):
         for img_list in sorted(os.listdir(os.path.join(path, folder_list))):
-            img = transform(Image.open(os.path.join(path, folder_list, img_list)))
+            img = transform(Image.open(
+                os.path.join(path, folder_list, img_list)))
             img = img.unsqueeze(0)
             # print(type(img))
             if folder_list == 'cat':
@@ -48,7 +49,8 @@ def getDataset(path):
     train_size = int(0.8 * len(data_array))
     test_size = len(data_array) - train_size
 
-    train_dataset, test_dataset = torch.utils.data.random_split(data_array, [train_size, test_size])
+    train_dataset, test_dataset = torch.utils.data.random_split(
+        data_array, [train_size, test_size])
 
     print('train_dataset type: ', type(train_dataset))
     print('test_dataset type: ', type(test_dataset))

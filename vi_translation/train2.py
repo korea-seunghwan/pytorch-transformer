@@ -22,33 +22,42 @@ transform = transforms.Compose(
 )
 
 trainset = torchvision.datasets.CIFAR10(root=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data'), train=True, download=True, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True, num_workers=4)
-
 testset = torchvision.datasets.CIFAR10(root=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data'), train=False, download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=64, shuffle=False, num_workers=2)
+
+# print("trainset: ", trainset[0][1])
+dogset = []
+catset = []
+for data, label in trainset:
+    if label == 3:
+        catset.append(data)
+    elif label == 5:
+        dogset.append(data)
+
+trainset = []
+for i in range(len(dogset)):
+    tmp_data_set = (
+        dogset[i],
+        catset[i]
+    )
+    trainset.append(tmp_data_set)
+
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True, num_workers=0)
+testloader = torch.utils.data.DataLoader(testset, batch_size=4, shuffle=False, num_workers=0)
 
 classes = ['plane', 'car', 'bird', 'cat','deer','dog','frog','horse','ship','truck']
-
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 model = VitTranslation(32, 4, 3, 512).to(device)
 
-for epoch in range(100):
+# for epoch in range(100):
 
-    for i, data in enumerate(trainloader, 0):
-        running_loss = 0.0
-        for j, data2 in enumerate(trainloader, 0):
-            # get the inputs; data is a list of [inputs, labels]
-            inputs1, labels1 = data
-            inputs2, labels2 = data2
+for i, data in enumerate(trainloader):
+    running_loss = 0.0
 
-            inputs1 = inputs1.float().to(device)
-            labels1 = labels1.long().to(device)
-
-            inputs2 = inputs2.float().to(device)
-            labels2 = labels2.long().to(device)
-
-            output = model(inputs1, inputs2)
-
-            print("output : ", output[:,0,0])
+    dogdata = data[0]
+    catdata = data[1]
+    # get the inputs; data is a list of [inputs, labels]
+    print("data: ", dogdata.shape)
+    # print("data 1: ", data[1].shape)
+    break
