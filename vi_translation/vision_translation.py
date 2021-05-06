@@ -91,21 +91,60 @@ class VitTranslation(nn.Module):
         self.encoder = VitTranslationEncoder(img_size, patch_size, in_chans, embed_dim)
         self.decoder = VitTranslationDecoder(img_size, patch_size, in_chans, embed_dim)
 
-    def forward(self, x1, x2):
-        src = self.encoder(x1)
-        output = self.decoder(src, x2)
-        # output = torch.sigmoid(output)
+    def forward(self, src, trg):
+        src = self.encoder(src)
+        output = self.decoder(src, trg)
+        output = torch.sigmoid(output)
 
         return output 
+
+class Discriminator(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.main = nn.Sequential(
+            nn.Conv2d(3, 64, 4, 2, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            #########################################
+            nn.Conv2d(64, 128, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(128),
+            #########################################
+            nn.Conv2d(128, 256, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(256),
+            #########################################
+            nn.Conv2d(256, 512, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(512),
+            nn.LeakyReLU(512),
+            #########################################
+            nn.Conv2d(512, 1, 4, 2, 1, bias=False),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        out = self.main(x)
+        return out
 
 class Generator(nn.Module):
     def __init__(self):
         super().__init__()
 
         self.main = nn.Sequential(
-            nn.ConvTranspose2d(512, 3, 8, 4, 2, bias=False)
+            nn.ConvTranspose2d(512, 256, 4, 1, 0, bias=False),
+            nn.BatchNorm2d(256),
+            nn.ReLU(True),
+            ##################################################
+            nn.ConvTranspose2d(256, 128, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(128),
+            nn.ReLU(True),
+            ##################################################
+            nn.ConvTranspose2d(128, 64, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(64),
+            nn.ReLU(True),
+            ##################################################
+            nn.ConvTranspose2d(64, 3, 4, 2, 1, bias=False),
+            nn.Tanh()
         )
-
 
     def forward(self, x):
         out = self.main(x)

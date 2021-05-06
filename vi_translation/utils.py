@@ -1,58 +1,45 @@
 import os
-import sys
-import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
+import torch.nn as nn
+import torch.nn.functional as F
+import torchvision
 import torchvision.transforms as transforms
 
-from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
 
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-])
+def getDataLoader():
+    transform = transforms.Compose(
+        [transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5,0.5,0.5))]
+    )
 
-def image_to_data(path):
-    cat_data = torch.tensor([])
-    dog_data = torch.tensor([])
-    for folder_list in sorted(os.listdir(path)):
-        for img_list in sorted(os.listdir(os.path.join(path, folder_list))):
-            img = transform(Image.open(
-                os.path.join(path, folder_list, img_list)))
-            img = img.unsqueeze(0)
-            # print(type(img))
-            if folder_list == 'cat':
-                cat_data = torch.cat((cat_data, img), dim=0)
-            elif folder_list == 'dog':
-                dog_data = torch.cat((dog_data, img), dim=0)
+    trainset = torchvision.datasets.CIFAR10(root=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data'), train=True, download=True, transform=transform)
+    testset = torchvision.datasets.CIFAR10(root=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data'), train=False, download=True, transform=transform)
 
-    # cat_data = np.array(cat_data)
-    # dog_data = np.array(dog_data)
+    # print("trainset: ", trainset[0][1])
+    dogset = []
+    catset = []
+    for data, label in trainset:
+        if label == 3:
+            catset.append(data)
+        elif label == 5:
+            dogset.append(data)
 
-    # print('cat_data: ', cat_data.shape)
-    # print('dog_data: ', dog_data.shape)
-
-    return cat_data, dog_data
-
-def getDataset(path):
-    data_array = []
-    cat_data, dog_data = image_to_data(path)
-    for i in range(cat_data.shape[0]):
-        tmp_data_tuple = (
-            cat_data[i],
-            dog_data[i]
+    trainset = []
+    for i in range(len(dogset)):
+        tmp_data_set = (
+            dogset[i],
+            catset[i]
         )
-        data_array.append(tmp_data_tuple)
+        trainset.append(tmp_data_set)
 
-    # data_array = torch.Tensor(data_array)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True, num_workers=0)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=4, shuffle=False, num_workers=0)
 
-    train_size = int(0.8 * len(data_array))
-    test_size = len(data_array) - train_size
+    return trainloader, testloader
 
-    train_dataset, test_dataset = torch.utils.data.random_split(
-        data_array, [train_size, test_size])
-
-    print('train_dataset type: ', type(train_dataset))
-    print('test_dataset type: ', type(test_dataset))
-
-    return train_dataset, test_dataset
+def saveImg(e, type, img):
+    grid_img = torchvision.utils.make_grid(img, normalize=True).permute(1,2,0)
+    npimg = grid_img.detach().clone().cpu().numpy()
+    plt.imsave('vi_translation/results/train5/' + type + '_' + str(e)  + '.png', npimg)

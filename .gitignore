@@ -12,3 +12,5 @@ vi_translation/data
 .data/
 runs/
 my_checkpoint.pth.tar
+
+vi_translation/results
